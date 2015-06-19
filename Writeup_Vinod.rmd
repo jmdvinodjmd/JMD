@@ -1,0 +1,41 @@
+---
+title: "RProjectWriteUp"
+author: "Vinod Kumar Chauhan"
+date: "Friday, June 19, 2015"
+output: html_document
+---
+
+```{r}
+# importing the required libraries.
+library(caret)
+library(splines)
+library(parallel)
+library(plyr)
+library(gbm)
+library(survival)
+
+# enable multi-core processing
+library(doParallel)
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)
+
+# loading the data into R
+data = read.csv("pml-training1.csv")
+testData = read.csv("pml-testing.csv")
+
+# creating partions of data for training and validation.
+inTrain = createDataPartition(y=data$classe, p=0.90, list=FALSE)
+training = data[-inTrain,]
+testing = data[inTrain,]
+
+# Fit the model
+modFit = train(classe ~., method="gbm", data=training, verbose=FALSE)
+
+#pridicting with model on testing data
+print(modFit)
+pred1 =predict(modFit, testing)
+confusionMatrix(pred1, testing$classe)
+stopCluster(cl)
+pred2 = predict(modFit, testData)
+# The stopCluster is necessary to terminate the extra processes
+```
